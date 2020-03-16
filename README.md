@@ -42,15 +42,6 @@ For more advanced usage, please refer to the examples:
 - **How to get annotations for instance segmentation?** See [examples/instance_segmentation](examples/instance_segmentation).
 
 
-## Testing
-
-```bash
-pip install hacking pytest pytest-qt
-flake8 .
-pytest -v tests
-```
-
-
 ## Developing
 
 ```bash

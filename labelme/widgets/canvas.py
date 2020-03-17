@@ -10,7 +10,6 @@ import random
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
 
-
 CURSOR_DEFAULT = QtCore.Qt.ArrowCursor
 CURSOR_POINT = QtCore.Qt.PointingHandCursor
 CURSOR_DRAW = QtCore.Qt.CrossCursor

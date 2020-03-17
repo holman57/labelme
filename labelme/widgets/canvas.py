@@ -5,7 +5,7 @@ from qtpy import QtWidgets
 from labelme import QT5
 from labelme.shape import Shape
 import labelme.utils
-
+import random
 
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
@@ -259,6 +259,13 @@ class Canvas(QtWidgets.QWidget):
                 self.setToolTip(self.tr("Click & drag to move point"))
                 self.setStatusTip(self.toolTip())
                 self.update()
+                break
+            elif shape.nearestEdge(pos, 5):
+                # shape.highlightVertex(shape.nearest_edge[0], shape.MOVE_VERTEX)
+                # shape.highlightVertex(shape.nearest_edge[1], shape.MOVE_VERTEX)
+                group_mode = (int(ev.modifiers()) == QtCore.Qt.ControlModifier)
+                self.update()
+                print(pos)
                 break
             elif shape.containsPoint(pos):
                 if self.selectedVertex():

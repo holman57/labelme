@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import distutils.spawn
 import re
-from setuptools import find_packages
 from setuptools import setup
 import shlex
 import subprocess
@@ -74,19 +73,6 @@ def get_install_requires():
 
     return install_requires
 
-
-def get_long_description():
-    with open('README.md') as f:
-        long_description = f.read()
-    try:
-        import github2pypi
-        return github2pypi.replace_url(
-            slug='wkentaro/labelme', content=long_description
-        )
-    except Exception:
-        return long_description
-
-
 def main():
     version = get_version()
 
@@ -112,13 +98,8 @@ def main():
     setup(
         name='labelme',
         version=version,
-        packages=find_packages(exclude=['github2pypi']),
         description='Image Polygonal Annotation with Python',
-        long_description=get_long_description(),
         long_description_content_type='text/markdown',
-        author='Kentaro Wada',
-        author_email='www.kentaro.wada@gmail.com',
-        url='https://github.com/wkentaro/labelme',
         install_requires=get_install_requires(),
         license='GPLv3',
         keywords='Image Annotation, Machine Learning',
@@ -140,8 +121,7 @@ def main():
                 'labelme=labelme.__main__:main',
                 'labelme_draw_json=labelme.cli.draw_json:main',
                 'labelme_draw_label_png=labelme.cli.draw_label_png:main',
-                'labelme_json_to_dataset=labelme.cli.json_to_dataset:main',
-                'labelme_on_docker=labelme.cli.on_docker:main',
+                'labelme_json_to_dataset=labelme.cli.json_to_dataset:main'
             ],
         },
         data_files=[('share/man/man1', ['docs/man/labelme.1'])],

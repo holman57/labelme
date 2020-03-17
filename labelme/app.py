@@ -93,14 +93,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList = LabelListWidget()
         self.lastOpenDir = None
 
-        self.flag_dock = self.flag_widget = None
-        self.flag_dock = QtWidgets.QDockWidget(self.tr('Flags'), self)
-        self.flag_dock.setObjectName('Flags')
-        self.flag_widget = QtWidgets.QListWidget()
-        if config['flags']:
-            self.loadFlags({k: False for k in config['flags']})
-        self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
+        # self.flag_dock = self.flag_widget = None
+        # self.flag_dock = QtWidgets.QDockWidget(self.tr('Flags'), self)
+        # self.flag_dock.setObjectName('Flags')
+        # self.flag_widget = QtWidgets.QListWidget()
+        # if config['flags']:
+        #     self.loadFlags({k: False for k in config['flags']})
+        # self.flag_dock.setWidget(self.flag_widget)
+        # self.flag_widget.itemChanged.connect(self.setDirty)
 
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         self.labelList.itemDoubleClicked.connect(self.editLabel)
@@ -123,9 +123,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.uniqLabelList.addItem(item)
                 rgb = self._get_rgb_by_label(label)
                 self.uniqLabelList.setItemLabel(item, label, rgb)
-        self.label_dock = QtWidgets.QDockWidget(self.tr(u'Label List'), self)
-        self.label_dock.setObjectName(u'Label List')
-        self.label_dock.setWidget(self.uniqLabelList)
+        # self.label_dock = QtWidgets.QDockWidget(self.tr(u'Label List'), self)
+        # self.label_dock.setObjectName(u'Label List')
+        # self.label_dock.setWidget(self.uniqLabelList)
 
         self.fileSearch = QtWidgets.QLineEdit()
         self.fileSearch.setPlaceholderText(self.tr('Search Filename'))
@@ -170,7 +170,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(scrollArea)
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
-        for dock in ['flag_dock', 'label_dock', 'shape_dock', 'file_dock']:
+        for dock in [
+            # 'flag_dock',
+            #          'label_dock',
+            'shape_dock', 'file_dock']:
             if self._config[dock]['closable']:
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
             if self._config[dock]['floatable']:
@@ -181,8 +184,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config[dock]['show'] is False:
                 getattr(self, dock).setVisible(False)
 
-        self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
+        # self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
+        # self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
 
@@ -323,9 +326,9 @@ class MainWindow(QtWidgets.QMainWindow):
         delete = action(self.tr('Delete Polygons'), self.deleteSelectedShape,
                         shortcuts['delete_polygon'], 'cancel',
                         self.tr('Delete the selected polygons'), enabled=False)
-        copy = action(self.tr('Duplicate Polygons'), self.copySelectedShape,
+        auto = action(self.tr('Full Auto'), self.copySelectedShape,
                       shortcuts['duplicate_polygon'], 'copy',
-                      self.tr('Create a duplicate of the selected polygons'),
+                      self.tr('Automatically generate path'),
                       enabled=False)
         undoLastPoint = action(self.tr('Undo last point'),
                                self.canvas.undoLastPoint,
@@ -440,11 +443,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions = utils.struct(
             saveAuto=saveAuto,
             saveWithImageData=saveWithImageData,
-            changeOutputDir=changeOutputDir,
+            # changeOutputDir=changeOutputDir,
             save=save, saveAs=saveAs, open=open_, close=close,
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
-            delete=delete, edit=edit, copy=copy,
+            delete=delete, edit=edit, copy=auto,
             undoLastPoint=undoLastPoint, undo=undo,
             addPointToEdge=addPointToEdge, removePoint=removePoint,
             createMode=createMode, editMode=editMode,
@@ -462,7 +465,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
                 edit,
-                copy,
+                auto,
                 delete,
                 None,
                 undo,
@@ -482,7 +485,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 createLineStripMode,
                 editMode,
                 edit,
-                copy,
+                auto,
                 delete,
                 undo,
                 undoLastPoint,
@@ -509,7 +512,7 @@ class MainWindow(QtWidgets.QMainWindow):
             file=self.menu(self.tr('&File')),
             edit=self.menu(self.tr('&Edit')),
             view=self.menu(self.tr('&View')),
-            help=self.menu(self.tr('&Help')),
+            # help=self.menu(self.tr('&Help')),
             recentFiles=QtWidgets.QMenu(self.tr('Open &Recent')),
             labelList=labelMenu,
         )
@@ -525,7 +528,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 save,
                 saveAs,
                 saveAuto,
-                changeOutputDir,
+                # changeOutputDir,
                 saveWithImageData,
                 close,
                 deleteFile,
@@ -533,12 +536,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 quit,
             ),
         )
-        utils.addActions(self.menus.help, (help,))
+        # utils.addActions(self.menus.help, (help,))
         utils.addActions(
             self.menus.view,
             (
-                self.flag_dock.toggleViewAction(),
-                self.label_dock.toggleViewAction(),
+                # self.flag_dock.toggleViewAction(),
+                # self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
                 None,
@@ -572,6 +575,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tools = self.toolbar('Tools')
         # Menu buttons on Left
         self.actions.tool = (
+            auto,
             open_,
             opendir,
             openNextImg,
@@ -581,7 +585,6 @@ class MainWindow(QtWidgets.QMainWindow):
             None,
             createMode,
             editMode,
-            copy,
             delete,
             undo,
             None,
@@ -1053,13 +1056,13 @@ class MainWindow(QtWidgets.QMainWindow):
             s.append(shape)
         self.loadShapes(s)
 
-    def loadFlags(self, flags):
-        self.flag_widget.clear()
-        for key, flag in flags.items():
-            item = QtWidgets.QListWidgetItem(key)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
-            self.flag_widget.addItem(item)
+    # def loadFlags(self, flags):
+    #     self.flag_widget.clear()
+    #     for key, flag in flags.items():
+    #         item = QtWidgets.QListWidgetItem(key)
+    #         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+    #         item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
+    #         self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
         lf = LabelFile()
@@ -1313,12 +1316,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._config['keep_prev']:
             prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        flags = {k: False for k in self._config['flags'] or []}
-        if self.labelFile:
-            self.loadLabels(self.labelFile.shapes)
-            if self.labelFile.flags is not None:
-                flags.update(self.labelFile.flags)
-        self.loadFlags(flags)
+        # flags = {k: False for k in self._config['flags'] or []}
+        # if self.labelFile:
+        #     self.loadLabels(self.labelFile.shapes)
+        #     if self.labelFile.flags is not None:
+        #         flags.update(self.labelFile.flags)
+        # self.loadFlags(flags)
         if self._config['keep_prev'] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
             self.setDirty()
@@ -1493,7 +1496,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except OSError:
             pass
 
-        output_loc = filename + "/"
+        output_loc = filename + "\\"
         # Log the time
         time_start = time.time()
         # Start capturing the feed

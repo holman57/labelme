@@ -19,7 +19,6 @@ DEFAULT_SELECT_FILL_COLOR = QtGui.QColor(R, G, B, 155)         # selected
 DEFAULT_VERTEX_FILL_COLOR = QtGui.QColor(R, G, B, 255)         # hovering
 DEFAULT_HVERTEX_FILL_COLOR = QtGui.QColor(255, 255, 255, 255)  # hovering
 
-
 class Shape(object):
 
     P_SQUARE, P_ROUND = 0, 1
@@ -36,6 +35,8 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
+
+    nearest_edge = []
 
     def __init__(self, label=None, line_color=None, shape_type=None,
                  flags=None, group_id=None):
@@ -201,6 +202,12 @@ class Shape(object):
             if dist <= epsilon and dist < min_distance:
                 min_distance = dist
                 post_i = i
+                self.nearest_edge = [self.points[i - 1], self.points[i]]
+            line = [self.points[0], self.points[len(self.points) - 1]]
+            dist = labelme.utils.distancetoline(point, line)
+            if dist <= epsilon:
+                post_i = i
+                self.nearest_edge = [self.points[0], self.points[len(self.points) - 1]]
         return post_i
 
     def containsPoint(self, point):

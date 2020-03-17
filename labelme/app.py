@@ -5,6 +5,8 @@ import os
 import os.path as osp
 import re
 import webbrowser
+import cv2
+import time
 
 import imgviz
 from qtpy import QtCore
@@ -189,7 +191,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shortcuts = self._config['shortcuts']
         quit = action(self.tr('&Quit'), self.close, shortcuts['quit'], 'quit',
                       self.tr('Quit application'))
-        open_ = action(self.tr('&Open'),
+        open_ = action(self.tr('&Open Video'),
                        self.openFile,
                        shortcuts['open'],
                        'open',
@@ -1448,22 +1450,85 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._config['keep_prev'] = keep_prev
 
-    def openFile(self, _value=False):
+    def openDirDialog(self, _value=False, dirpath=None):
         if not self.mayContinue():
             return
+
+        defaultOpenDirPath = dirpath if dirpath else '.'
+        if self.lastOpenDir and osp.exists(self.lastOpenDir):
+            defaultOpenDirPath = self.lastOpenDir
+        else:
+            defaultOpenDirPath = osp.dirname(self.filename) \
+                if self.filename else '.'
+
+        targetDirPath = str(QtWidgets.QFileDialog.getExistingDirectory(
+            self,
+            self.tr('%s - Open Directory') % __appname__,
+            defaultOpenDirPath,
+            QtWidgets.QFileDialog.ShowDirsOnly |
+            QtWidgets.QFileDialog.DontResolveSymlinks))
+        self.importDirImages(targetDirPath)
+
+    def openFile(self, _value=False):
+        pwd = os.getcwd()
+        print("pwd:", pwd)
         path = osp.dirname(str(self.filename)) if self.filename else '.'
-        formats = ['*.{}'.format(fmt.data().decode())
-                   for fmt in QtGui.QImageReader.supportedImageFormats()]
-        filters = self.tr("Image & Label files (%s)") % ' '.join(
-            formats + ['*%s' % LabelFile.suffix])
-        filename = QtWidgets.QFileDialog.getOpenFileName(
-            self, self.tr('%s - Choose Image or Label file') % __appname__,
-            path, filters)
+        filepath = QtWidgets.QFileDialog.getOpenFileName(
+            self, self.tr('%s - Choose Video') % __appname__, path)
         if QT5:
-            filename, _ = filename
-        filename = str(filename)
-        if filename:
-            self.loadFile(filename)
+            filepath, _ = filepath
+        filepath = str(filepath)
+        print("filepath:", filepath)
+
+        filepathsplit = filepath.split("/")
+        filename = filepathsplit[len(filepathsplit) - 1].split(".")[0]
+        dirpath = filepath.split(filename)[0]
+        print("filename:", filename)
+        print("dirpath:", dirpath)
+
+        os.chdir(dirpath)
+
+        try:
+            os.mkdir(filename)
+        except OSError:
+            pass
+
+        output_loc = filename + "/"
+        # Log the time
+        time_start = time.time()
+        # Start capturing the feed
+        cap = cv2.VideoCapture(filepath)
+        # Find the number of frames
+        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
+        print("Number of frames: ", video_length)
+        count = 0
+        print("Converting video..\n")
+        # Start converting the video
+        while cap.isOpened():
+            # Extract the frame
+            ret, frame = cap.read()
+            # Write the results back to output location.
+            # cv2.imwrite(output_loc + 'frame{}.jpg'.format(count+1), frame)
+            cv2.imwrite(output_loc + 'frame%04d.jpg' % (count + 1), frame)
+            count = count + 1
+            # If there are no more frames left
+            if (count > (video_length - 1)):
+                # Log the time again
+                time_end = time.time()
+                # Release the feed
+                cap.release()
+                # Print stats
+                print("Done extracting frames.\n%d frames extracted" % count)
+                print("It took %d seconds forconversion." % (time_end - time_start))
+                break
+
+        # targetDirPath = str(QtWidgets.QFileDialog.getExistingDirectory(
+        #     self,
+        #     self.tr('%s - Open Directory') % __appname__,
+        #     '',
+        #     QtWidgets.QFileDialog.getOpen))
+        # print(targetDirPath)
+        self.importDirImages(output_loc)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
@@ -1658,25 +1723,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def moveShape(self):
         self.canvas.endMove(copy=False)
         self.setDirty()
-
-    def openDirDialog(self, _value=False, dirpath=None):
-        if not self.mayContinue():
-            return
-
-        defaultOpenDirPath = dirpath if dirpath else '.'
-        if self.lastOpenDir and osp.exists(self.lastOpenDir):
-            defaultOpenDirPath = self.lastOpenDir
-        else:
-            defaultOpenDirPath = osp.dirname(self.filename) \
-                if self.filename else '.'
-
-        targetDirPath = str(QtWidgets.QFileDialog.getExistingDirectory(
-            self,
-            self.tr('%s - Open Directory') % __appname__,
-            defaultOpenDirPath,
-            QtWidgets.QFileDialog.ShowDirsOnly |
-            QtWidgets.QFileDialog.DontResolveSymlinks))
-        self.importDirImages(targetDirPath)
 
     @property
     def imageList(self):

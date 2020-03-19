@@ -34,17 +34,6 @@ from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 
-# FIXME
-# - [medium] Set max zoom value to something big enough for FitWidth/Window
-
-# TODO(unknown):
-# - [high] Add polygon movement with arrow keys
-# - [high] Deselect shape when clicking and already selected(?)
-# - [low,maybe] Open images with drag & drop.
-# - [low,maybe] Preview images on file dialogs.
-# - Zoom is too "steppy".
-
-
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
 
 
@@ -195,10 +184,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         auto = action(
             self.tr('Full Auto'), self.copySelectedShape,
-                      shortcuts['duplicate_polygon'], 'copy',
-                      self.tr('Automatically generate path'),
-
-            # self.addLabel(shape=auto_shape()),
+            shortcuts['duplicate_polygon'], 'copy',
+            self.tr('Automatically generate path'),
             enabled=True
         )
 
@@ -262,7 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
             enabled=True)
 
-        saveAuto.setChecked(self._config['auto_save'])
+        saveAuto.setChecked(True)
 
         saveWithImageData = action(
             text='Save With Image Data',
@@ -1141,6 +1128,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapesBackups.append(self.canvas.shapes)
         self.addLabel(shape)
         self.canvas.selectShapes(self.canvas.shapes)
+        self.saveFile()
+
 
     def labelSelectionChanged(self):
         if self._noSelectionSlot:
@@ -1329,8 +1318,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
         self.image = image
         self.filename = filename
-        if self._config['keep_prev']:
-            prev_shapes = self.canvas.shapes
+        # if self._config['keep_prev']:
+        prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         # flags = {k: False for k in self._config['flags'] or []}
         # if self.labelFile:
@@ -1338,11 +1327,13 @@ class MainWindow(QtWidgets.QMainWindow):
         #     if self.labelFile.flags is not None:
         #         flags.update(self.labelFile.flags)
         # self.loadFlags(flags)
-        if self._config['keep_prev'] and self.noShapes():
-            self.loadShapes(prev_shapes, replace=False)
-            self.setDirty()
-        else:
-            self.setClean()
+
+
+        # if self._config['keep_prev'] and self.noShapes():
+        self.loadShapes(prev_shapes, replace=False)
+        self.setDirty()
+        # else:
+        #     self.setClean()
         self.canvas.setEnabled(True)
         # set zoom values
         is_initial_load = not self.zoom_values
@@ -1447,8 +1438,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if Qt.KeyboardModifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
             self._config['keep_prev'] = True
 
-        if not self.mayContinue():
-            return
+        print()
+
+        # if not self.mayContinue():
+        #     return
+
+        # if self.dirty:
+        #     self.saveFile()
 
         if len(self.imageList) <= 0:
             return
@@ -1501,7 +1497,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         filepathsplit = filepath.split("/")
         filename = filepathsplit[len(filepathsplit) - 1].split(".")[0]
-        dirpath = filepath.split(filename)[0]
+        if "\\" in filename:
+            dirpath = filepath.split(filename)[0]
+        else:
+            return
         print("filename:", filename)
         print("dirpath:", dirpath)
 
@@ -1761,6 +1760,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
+
+        os.chdir(dirpath)
+
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
                 continue
@@ -1768,7 +1770,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
                 label_file = osp.join(self.output_dir, label_file_without_path)
-            item = QtWidgets.QListWidgetItem(filename)
+            item = QtWidgets.QListWidgetItem(filename.split("\\")[len(filename.split("\\")) - 1])
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             if QtCore.QFile.exists(label_file) and \
                     LabelFile.is_label_file(label_file):

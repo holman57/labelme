@@ -196,7 +196,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        self.openFile,
                        shortcuts['open'],
                        'open',
-                       self.tr('Open image or label file'))
+                       self.tr('Open video and convert to frames'))
 
         opendir = action(self.tr('&Open Dir'), self.openDirDialog,
                          shortcuts['open_dir'], 'open', self.tr(u'Open Dir'))
@@ -1118,7 +1118,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
 
     def copySelectedShape(self):
-        shape = Shape("Auto Path", 255, "polygon", None, 0)
+        shape = Shape("Path", 255, "polygon", None, 0)
         shape.points = [
             PyQt5.QtCore.QPointF(224.19354838709677, 127.35483870967741),
             PyQt5.QtCore.QPointF(875.8064516129033, 150.74193548387098),

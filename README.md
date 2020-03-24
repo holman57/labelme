@@ -37,3 +37,5 @@ whose development has already stopped.
   year =         {2016}
 }
 ```
+
+B. C. Russell, A. Torralba, K. P. Murphy, W. T. Freeman. LabelMe: a Database and Web-based Tool for Image Annotation. International Journal of Computer Vision, 77(1-3):157-173, 2008. [Project page](http://labelme.csail.mit.edu/Release3.0/)

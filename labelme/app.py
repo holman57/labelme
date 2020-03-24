@@ -9,6 +9,8 @@ import webbrowser
 import PyQt5 as PyQt5
 import cv2
 import time
+import numpy as np
+import matplotlib.image as mpimg
 
 import imgviz
 from qtpy import QtCore
@@ -36,6 +38,81 @@ from labelme.widgets import ZoomWidget
 
 LABEL_COLORMAP = imgviz.label_colormap(value=200)
 
+
+def strafe(iterations, image_maps, imgmp):
+
+    avg_centroids = []
+    for k in range(iterations, iterations + 1):
+
+        threshold_low, threshold_high = 30, 60
+        x, y = imgmp.shape[1], imgmp.shape[0]
+
+        image_g = cv2.cvtColor(imgmp, cv2.COLOR_RGB2GRAY)
+        image_blurred = cv2.GaussianBlur(imgmp, (7, 7), 0)
+        image_canny = cv2.Canny(image_blurred, threshold_low, threshold_high)
+
+        rectangles, centroids = [], []
+        number_of_rectangles = k
+        length_of_segment = int(x / number_of_rectangles)
+        segment_position = 0
+
+        for j in range(0, number_of_rectangles):
+            rect = fill_rectangle(image_canny, segment_position, segment_position + length_of_segment, 0,
+                                  int(y / 2))
+            rectangles.append(rect)
+            c = centroid(rectangles[len(rectangles) - 1])
+            c = (c[0] + segment_position, c[1])
+            centroids.append(c)
+            segment_position += length_of_segment
+        avg_centroids.append(centroids)
+
+        color = (255, 0, 0)
+        thickness = 5
+
+        start_point = (0, int(y / 2))
+        end_point = (x, int(y / 2))
+        frame = cv2.line(imgmp, start_point, end_point, color, thickness)
+
+        segment_position = 0
+
+        for j in range(0, number_of_rectangles - 1):
+            segment_position += length_of_segment
+            start_point = (segment_position, 0)
+            end_point = (segment_position, int(y / 2))
+            frame = cv2.line(frame, start_point, end_point, color, thickness)
+
+        thickness = 20
+        color = (0, 255, 0)
+
+        for j in range(0, number_of_rectangles - 1):
+            start_point = (centroids[j])
+            end_point = (centroids[j + 1])
+            frame = cv2.line(frame, start_point, end_point, color, thickness)
+
+    return avg_centroids
+
+
+def fill_rectangle(A, x1, x2, y1, y2):
+    rectangle = []
+    for i in range(y1, y2):
+        row = []
+        for j in range(x1, x2):
+            if A[i][j] > 0:
+                row.append(1)
+            else:
+                row.append(0)
+        rectangle.append(row)
+    return rectangle
+
+
+def centroid(A):
+    cx, cy, m = 0, 0, 0
+    for a in range(len(A)):
+        for b in range(len(A[a])):
+            cx += A[a][b] * a
+            cy += A[a][b] * b
+            m += A[a][b]
+    return (int)(cx / m), (int)(cy / m)
 
 class MainWindow(QtWidgets.QMainWindow):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
@@ -183,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shortcuts = self._config['shortcuts']
 
         auto = action(
-            self.tr('Full Auto'), self.copySelectedShape,
+            self.tr('Auto'), self.Full_Auto,
             shortcuts['duplicate_polygon'], 'copy',
             self.tr('Automatically generate path'),
             enabled=True
@@ -1117,12 +1194,79 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return False
 
-    def copySelectedShape(self):
+    def Full_Auto(self):
+        self.canvas.deleteSelected()
+        imgmp = mpimg.imread(self.filename)
+        print(imgmp.shape)
+        avg_centroids = strafe(3, imgmp, imgmp)
+        avg = 0
+        for centroids in avg_centroids:
+            for c in centroids:
+                avg += c[1]
+            avg = int(avg / len(centroids))
+        print(avg)
+        strafe_image_map = imgmp[avg:]
+        threshold_low, threshold_high = 30, 60
+        image_blurred = cv2.GaussianBlur(strafe_image_map, (7, 7), 0)
+        image_canny = cv2.Canny(image_blurred, threshold_low, threshold_high)
+        print(strafe_image_map.shape)
+        point_centroids = []
+        x, y = strafe_image_map.shape[1], strafe_image_map.shape[0]
+        r1 = fill_rectangle(image_canny, 0, int(x / 2), 0, int(y / 2))
+        c1 = centroid(r1)
+        c1 = (c1[1], c1[0])
+        point_centroids.append(c1)
+        r2 = fill_rectangle(image_canny, int(x / 2), x, 0, int(y / 2))
+        c2 = centroid(r2)
+        c2 = (c2[1] + int(x / 2), c2[0])
+        point_centroids.append(c2)
+        r3 = fill_rectangle(image_canny, 0, int(x / 2), int(y / 2), y)
+        c3 = centroid(r3)
+        c3 = (c3[1], c3[0] + int(y / 2))
+        point_centroids.append(c3)
+        r4 = fill_rectangle(image_canny, int(x / 2), x, int(y / 2), y)
+        c4 = centroid(r4)
+        c4 = (c4[1] + int(x / 2), c4[0] + int(y / 2))
+        point_centroids.append(c4)
+        c1 = (c1[0], c1[1] + avg)
+        c2 = (c2[0], c2[1] + avg)
+        c3 = (c3[0], c3[1] + avg)
+        c4 = (c4[0], c4[1] + avg)
+        # print("c1:", c1)
+        # print("c2:", c2)
+        # print("c3:", c3)
+        # print("c4:", c4)
+        m1 = (c1[1] - c3[1]) / (c3[0] - c1[0])
+        m2 = (c2[1] - c4[1]) / (c4[0] - c2[0])
+        print("m1:", m1)
+        print("m2:", m2)
+        if m1 < 0: m1 = m1 * (-1)
+        if m2 < 0: m2 = m2 * (-1)
+        # print("c3:", c3)
+        # print("c4:", c4)
+        # print("imgmp.shape[0]:", imgmp.shape[0])
+        # print("imgmp.shape[1]:", imgmp.shape[1])
+        x1, y1 = c3[0], c3[1]
+        x2, y2 = x1, y1
+        while x2 > 1 and x2 < imgmp.shape[1] - 1 and y2 > 1 and y2 < imgmp.shape[0] - 1:
+            x2 = x2 + 1
+            y2 = int(m1 * (x2 - x1) + y1)
+        c3 = (x2, y2)
+        x1, y1 = c4[0], c4[1]
+        x2, y2 = x1, y1
+        while x2 > 1 and x2 < imgmp.shape[1] - 1 and y2 > 1 and y2 < imgmp.shape[0] - 1:
+            x2 = x2 + 1
+            y2 = int(m1 * (x2 - x1) + y1)
+        c4 = (x2, y2)
+        print("c3:", c3)
+        print("c4:", c4)
         shape = Shape("Path", 255, "polygon", None, 0)
         shape.points = [
-            PyQt5.QtCore.QPointF(224.19354838709677, 127.35483870967741),
-            PyQt5.QtCore.QPointF(875.8064516129033, 150.74193548387098),
-            PyQt5.QtCore.QPointF(875.8064516129033, 20.74193548387098)]
+            PyQt5.QtCore.QPointF(c3[0], c3[1]),
+            PyQt5.QtCore.QPointF(c1[0], c1[1]),
+            PyQt5.QtCore.QPointF(c2[0], c2[1]),
+            PyQt5.QtCore.QPointF(c4[0], c4[1])
+        ]
         shape.close()
         self.canvas.shapes.append(shape)
         self.canvas.shapesBackups.append(self.canvas.shapes)
@@ -1497,10 +1641,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         filepathsplit = filepath.split("/")
         filename = filepathsplit[len(filepathsplit) - 1].split(".")[0]
-        if "\\" in filename:
-            dirpath = filepath.split(filename)[0]
-        else:
-            return
+        print(filename)
+        dirpath = filepath.split(filename)[0]
         print("filename:", filename)
         print("dirpath:", dirpath)
 
@@ -1529,6 +1671,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # cv2.imwrite(output_loc + 'frame{}.jpg'.format(count+1), frame)
             cv2.imwrite(output_loc + 'frame%04d.jpg' % (count + 1), frame)
             count = count + 1
+            print('frame{}.jpg'.format(count))
             # If there are no more frames left
             if (count > (video_length - 1)):
                 # Log the time again
@@ -1546,7 +1689,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #     '',
         #     QtWidgets.QFileDialog.getOpen))
         # print(targetDirPath)
-        self.importDirImages(output_loc)
+        self.importDirImages(dirpath + filename)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir

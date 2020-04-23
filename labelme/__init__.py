@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from qtpy import QT_VERSION
+# import qtpy as QT_VERSION
 
 
 __appname__ = 'labelme'
@@ -14,9 +14,9 @@ __appname__ = 'labelme'
 # 3. PATCH version when you make backwards-compatible bug fixes.
 __version__ = '4.2.9'
 
-QT4 = QT_VERSION[0] == '4'
-QT5 = QT_VERSION[0] == '5'
-del QT_VERSION
+# QT4 = QT_VERSION[0] == '4'
+# QT5 = QT_VERSION[0] == '5'
+# del QT_VERSION
 
 PY2 = sys.version[0] == '2'
 PY3 = sys.version[0] == '3'

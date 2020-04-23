@@ -259,6 +259,11 @@ class MainWindow(QtWidgets.QMainWindow):
         action = functools.partial(utils.newAction, self)
         shortcuts = self._config['shortcuts']
 
+        undoLastPoint = action(self.tr('Undo last point'),
+                               self.canvas.undoLastPoint,
+                               shortcuts['undo_last_point'], 'undo',
+                               self.tr('Undo last drawn point'), enabled=False)
+
         auto = action(
             self.tr('Auto'), self.Full_Auto,
             shortcuts['duplicate_polygon'], 'copy',
@@ -403,11 +408,6 @@ class MainWindow(QtWidgets.QMainWindow):
         delete = action(self.tr('Delete Polygons'), self.deleteSelectedShape,
                         shortcuts['delete_polygon'], 'cancel',
                         self.tr('Delete the selected polygons'), enabled=False)
-
-        undoLastPoint = action(self.tr('Undo last point'),
-                               self.canvas.undoLastPoint,
-                               shortcuts['undo_last_point'], 'undo',
-                               self.tr('Undo last drawn point'), enabled=False)
 
         addPointToEdge = action(
             text=self.tr('Add Point to Edge'),
